@@ -1,0 +1,13 @@
+node_modules/
+dist/
+build/
+.env
+.env.local
+.next/
+*.log
+coverage/
+.DS_Store
+*.swp
+*.swo
+.vscode/
+.idea/

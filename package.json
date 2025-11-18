@@ -1,0 +1,21 @@
+{
+  "name": "event-stream-observability-platform",
+  "version": "1.0.0",
+  "description": "Lightweight observability platform for logs, metrics, and events",
+  "private": true,
+  "workspaces": [
+    "api",
+    "dashboard",
+    "sdks/node"
+  ],
+  "scripts": {
+    "dev:api": "npm run dev -w api",
+    "dev:dashboard": "npm run dev -w dashboard",
+    "dev": "concurrently \"npm run dev:api\" \"npm run dev:dashboard\"",
+    "build": "npm run build -w api && npm run build -w dashboard",
+    "db:migrate": "npm run migrate -w api"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}
