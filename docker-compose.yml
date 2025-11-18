@@ -16,6 +16,45 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      - observability
+
+  api:
+    build:
+      context: ./api
+      dockerfile: Dockerfile
+    ports:
+      - "3001:3001"
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/observability
+      PORT: 3001
+      NODE_ENV: production
+      CORS_ORIGIN: "*"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - observability
+    restart: unless-stopped
+
+  dashboard:
+    build:
+      context: ./dashboard
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:3001
+      NODE_ENV: production
+    depends_on:
+      - api
+    networks:
+      - observability
+    restart: unless-stopped
 
 volumes:
   postgres_data:
+
+networks:
+  observability:
+    driver: bridge

@@ -9,11 +9,29 @@
     "sdks/node"
   ],
   "scripts": {
+    "dev": "concurrently \"npm run dev:api\" \"npm run dev:dashboard\"",
     "dev:api": "npm run dev -w api",
     "dev:dashboard": "npm run dev -w dashboard",
-    "dev": "concurrently \"npm run dev:api\" \"npm run dev:dashboard\"",
-    "build": "npm run build -w api && npm run build -w dashboard",
-    "db:migrate": "npm run migrate -w api"
+    "build": "npm run build -w api && npm run build -w dashboard && npm run build -w sdks/node",
+    "build:api": "npm run build -w api",
+    "build:dashboard": "npm run build -w dashboard",
+    "build:sdk": "npm run build -w sdks/node",
+    "start": "concurrently \"npm run start:api\" \"npm run start:dashboard\"",
+    "start:api": "npm run start -w api",
+    "start:dashboard": "npm run start -w dashboard",
+    "test": "npm run test -w api",
+    "test:api": "npm run test -w api",
+    "lint": "npm run lint -w api && npm run lint -w dashboard",
+    "lint:api": "npm run lint -w api",
+    "lint:dashboard": "npm run lint -w dashboard",
+    "db:migrate": "npm run migrate -w api",
+    "db:seed": "npm run seed -w api",
+    "db:reset": "npm run db:reset -w api",
+    "docker:up": "docker compose up -d",
+    "docker:down": "docker compose down",
+    "docker:build": "docker compose build",
+    "docker:logs": "docker compose logs -f",
+    "docker:dev": "docker compose -f docker-compose.dev.yml up -d"
   },
   "devDependencies": {
     "concurrently": "^8.2.2"

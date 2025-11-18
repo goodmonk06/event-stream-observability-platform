@@ -3,78 +3,43 @@ import { authenticateApiKey } from '../middleware/auth';
 import { createLogEventsBatch } from '../models/log';
 import { createMetricPointsBatch } from '../models/metric';
 import { createCustomEventsBatch } from '../models/event';
-import { IngestLogRequest, IngestMetricRequest, IngestEventRequest } from '../types';
+import { ingestLogsSchema, ingestMetricsSchema, ingestEventsSchema } from '../validation/schemas';
+import { validateBody } from '../utils/validation';
 
 export async function ingestRoutes(app: FastifyInstance) {
   // Ingest logs
   app.post('/ingest/logs', {
-    preHandler: authenticateApiKey,
+    preHandler: [authenticateApiKey, validateBody(ingestLogsSchema)],
     handler: async (request, reply) => {
       const project = (request as any).project;
-      const body = request.body as { logs: IngestLogRequest[] };
+      const { logs } = request.body as any;
 
-      if (!body.logs || !Array.isArray(body.logs)) {
-        return reply.code(400).send({ error: 'Request body must contain a "logs" array' });
-      }
-
-      try {
-        await createLogEventsBatch(project.id, body.logs);
-        reply.send({ success: true, count: body.logs.length });
-      } catch (error) {
-        console.error('Error ingesting logs:', error);
-        reply.code(500).send({ error: 'Failed to ingest logs' });
-      }
+      await createLogEventsBatch(project.id, logs);
+      reply.send({ success: true, count: logs.length });
     }
   });
 
   // Ingest metrics
   app.post('/ingest/metrics', {
-    preHandler: authenticateApiKey,
+    preHandler: [authenticateApiKey, validateBody(ingestMetricsSchema)],
     handler: async (request, reply) => {
       const project = (request as any).project;
-      const body = request.body as { metrics: IngestMetricRequest[] };
+      const { metrics } = request.body as any;
 
-      if (!body.metrics || !Array.isArray(body.metrics)) {
-        return reply.code(400).send({ error: 'Request body must contain a "metrics" array' });
-      }
-
-      // Validate metric types
-      for (const metric of body.metrics) {
-        if (!['counter', 'gauge'].includes(metric.type)) {
-          return reply.code(400).send({
-            error: `Invalid metric type: ${metric.type}. Must be "counter" or "gauge"`
-          });
-        }
-      }
-
-      try {
-        await createMetricPointsBatch(project.id, body.metrics);
-        reply.send({ success: true, count: body.metrics.length });
-      } catch (error) {
-        console.error('Error ingesting metrics:', error);
-        reply.code(500).send({ error: 'Failed to ingest metrics' });
-      }
+      await createMetricPointsBatch(project.id, metrics);
+      reply.send({ success: true, count: metrics.length });
     }
   });
 
   // Ingest custom events
   app.post('/ingest/events', {
-    preHandler: authenticateApiKey,
+    preHandler: [authenticateApiKey, validateBody(ingestEventsSchema)],
     handler: async (request, reply) => {
       const project = (request as any).project;
-      const body = request.body as { events: IngestEventRequest[] };
+      const { events } = request.body as any;
 
-      if (!body.events || !Array.isArray(body.events)) {
-        return reply.code(400).send({ error: 'Request body must contain an "events" array' });
-      }
-
-      try {
-        await createCustomEventsBatch(project.id, body.events);
-        reply.send({ success: true, count: body.events.length });
-      } catch (error) {
-        console.error('Error ingesting events:', error);
-        reply.code(500).send({ error: 'Failed to ingest events' });
-      }
+      await createCustomEventsBatch(project.id, events);
+      reply.send({ success: true, count: events.length });
     }
   });
 }

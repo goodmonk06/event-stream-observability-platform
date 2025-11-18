@@ -5,6 +5,7 @@ import { ingestRoutes } from './routes/ingest';
 import { queryRoutes } from './routes/query';
 import { projectRoutes } from './routes/projects';
 import { getPool } from './db/client';
+import { AppError, formatErrorResponse } from './utils/errors';
 
 dotenv.config();
 
@@ -21,6 +22,21 @@ async function start() {
   await app.register(cors, {
     origin: process.env.CORS_ORIGIN || '*',
     credentials: true
+  });
+
+  // Global error handler
+  app.setErrorHandler((error, request, reply) => {
+    if (error instanceof AppError) {
+      const response = formatErrorResponse(error);
+      return reply.code(error.statusCode).send(response);
+    }
+
+    // Log unexpected errors
+    request.log.error(error);
+
+    // Send generic error response
+    const response = formatErrorResponse(error);
+    return reply.code(500).send(response);
   });
 
   // Health check

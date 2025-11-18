@@ -2,124 +2,198 @@
 
 A lightweight, self-hosted observability platform for collecting and visualizing **logs**, **metrics**, and **custom events** from your applications.
 
-## Features
+## Overview
 
-- **Multi-tenancy**: Create multiple projects, each with its own API key
-- **Three data types**:
-  - **Logs**: Structured logs with levels (debug, info, warn, error) and full-text search
-  - **Metrics**: Counters and gauges with labels and time-series aggregation
-  - **Custom Events**: Track custom application events with arbitrary payloads
-- **Modern Stack**:
-  - Ingestion API: Fastify + TypeScript
-  - Storage: PostgreSQL (designed to be swappable with ClickHouse)
-  - Dashboard: Next.js 14 (App Router) + Tailwind CSS + Recharts
-- **Node.js SDK**: Easy integration with your Node.js applications
-- **Batch ingestion**: Efficient bulk data ingestion
-- **Real-time dashboard**: Search, filter, and visualize your data
+This platform provides a complete solution for application observability with three core capabilities:
+- **Structured Logs**: Full-text searchable logs with severity levels and rich context
+- **Time-Series Metrics**: Counters and gauges with labels and automatic aggregation
+- **Custom Events**: Track business and application events with arbitrary payloads
 
-## Project Structure
+Built for developers who need a simple, deployable observability solution that integrates easily into multiple applications and services.
 
-```
-event-stream-observability-platform/
-├── api/              # Fastify API server
-│   ├── src/
-│   │   ├── db/       # Database client and migrations
-│   │   ├── models/   # Data access layer
-│   │   ├── routes/   # API endpoints
-│   │   └── index.ts
-│   └── package.json
-├── dashboard/        # Next.js dashboard
-│   ├── src/
-│   │   ├── app/      # App router pages
-│   │   └── lib/      # API client
-│   └── package.json
-├── sdks/
-│   └── node/         # Node.js SDK
-│       ├── src/
-│       └── package.json
-└── docker-compose.yml
-```
+## Tech Stack
 
-## Quick Start
+| Component | Technologies |
+|-----------|-------------|
+| **API Server** | Fastify, TypeScript, Zod, PostgreSQL |
+| **Dashboard** | Next.js 14 (App Router), React, Tailwind CSS, Recharts |
+| **SDK** | TypeScript (Node.js) |
+| **Validation** | Zod schemas with type-safe error handling |
+| **Testing** | Vitest with domain logic tests |
+| **Container** | Docker, Docker Compose |
 
-### Prerequisites
+## Domain Model
 
-- Node.js 18+
-- PostgreSQL 14+
-- npm or yarn
+### Core Entities
 
-### 1. Clone and Install
+**Project**
+- Multi-tenant workspace with unique API key
+- Contains all logs, metrics, and events for one application
+- API Key format: `obs_<48-character-nanoid>`
+
+**LogEvent**
+- `level`: debug | info | warn | error
+- `message`: Full-text searchable string
+- `context`: Optional JSON object with metadata
+- `timestamp`: Event time (defaults to ingestion time)
+
+**MetricPoint**
+- `name`: Metric identifier (e.g., "cpu.usage", "api.requests")
+- `type`: counter (cumulative) | gauge (point-in-time)
+- `value`: Numeric value
+- `labels`: Key-value pairs for grouping (e.g., {"endpoint": "/api/users"})
+- `timestamp`: Measurement time
+
+**CustomEvent**
+- `name`: Event identifier (e.g., "user.signup", "order.completed")
+- `payload`: Arbitrary JSON data
+- `timestamp`: Event occurrence time
+
+## Getting Started
+
+### Requirements
+
+- **Node.js** 18+ and npm
+- **PostgreSQL** 14+
+- **Docker** (optional, for containerized deployment)
+
+### Quick Start (Local Development)
+
+#### 1. Install Dependencies
 
 ```bash
-git clone <repository-url>
-cd event-stream-observability-platform
 npm install
 ```
 
-### 2. Set Up Database
+#### 2. Set Up Database
 
-Start PostgreSQL (or use the provided Docker Compose):
+Start PostgreSQL (or use Docker):
 
 ```bash
-docker-compose up -d postgres
+npm run docker:dev
 ```
 
-Configure the API database connection:
+Configure API environment:
 
 ```bash
 cd api
 cp .env.example .env
-# Edit .env with your database credentials
+# Edit .env with your database credentials:
+# DATABASE_URL=postgresql://postgres:postgres@localhost:5432/observability
 ```
 
-Run migrations:
+#### 3. Initialize Database
 
 ```bash
 npm run db:migrate
+npm run db:seed
 ```
 
-### 3. Start the Services
+The seed script creates two demo projects with sample data:
+- **Demo Application** - Sample logs, metrics, and events
+- **E-commerce Platform** - Additional sample data
 
-**Development mode** (runs both API and dashboard):
+#### 4. Start Development Servers
 
 ```bash
-# From root directory
 npm run dev
 ```
 
-Or start services individually:
-
-```bash
-# Terminal 1 - API Server
-cd api
-npm run dev
-
-# Terminal 2 - Dashboard
-cd dashboard
-npm run dev
-```
-
-- API: http://localhost:3001
+This starts:
+- API Server: http://localhost:3001
 - Dashboard: http://localhost:3000
 
-### 4. Create a Project
+### Docker Deployment
 
-1. Open the dashboard at http://localhost:3000
-2. Navigate to "Projects"
-3. Create a new project
-4. Copy the generated API key
+#### Development (Database Only)
 
-## Using the Platform
+```bash
+npm run docker:dev
+```
 
-### Send Data from Node.js
+#### Full Stack (Production)
 
-Install the SDK in your application:
+```bash
+# Build images
+npm run docker:build
+
+# Start all services
+npm run docker:up
+
+# View logs
+npm run docker:logs
+
+# Stop services
+npm run docker:down
+```
+
+Services:
+- Dashboard: http://localhost:3000
+- API: http://localhost:3001
+- PostgreSQL: localhost:5432
+
+## Available Commands
+
+### Root Commands
+
+```bash
+# Development
+npm run dev              # Start API + Dashboard
+npm run dev:api          # Start API only
+npm run dev:dashboard    # Start Dashboard only
+
+# Build
+npm run build            # Build all packages
+npm run build:api        # Build API
+npm run build:dashboard  # Build Dashboard
+npm run build:sdk        # Build Node.js SDK
+
+# Production
+npm start                # Start built API + Dashboard
+
+# Testing & Quality
+npm test                 # Run all tests
+npm run lint             # Lint all packages
+
+# Database
+npm run db:migrate       # Run database migrations
+npm run db:seed          # Seed demo data
+npm run db:reset         # Migrate + Seed
+
+# Docker
+npm run docker:dev       # Start PostgreSQL only
+npm run docker:up        # Start full stack
+npm run docker:down      # Stop containers
+npm run docker:build     # Build Docker images
+npm run docker:logs      # View container logs
+```
+
+## End-to-End Flow Example
+
+### Vertical Slice: Project → Logs → Dashboard
+
+This demonstrates the complete flow from creating a project to visualizing data.
+
+#### 1. Create a Project
+
+Navigate to http://localhost:3000/projects and create a new project. Copy the generated API key.
+
+**Via API:**
+```bash
+curl -X POST http://localhost:3001/projects \
+  -H "Content-Type: application/json" \
+  -d '{"name": "My Application"}'
+```
+
+Response includes `api_key`: `obs_xxxxx...`
+
+#### 2. Send Logs from Your Application
+
+**Using Node.js SDK:**
 
 ```bash
 npm install @observability-platform/node-sdk
 ```
-
-Use it in your code:
 
 ```javascript
 const ObservabilityClient = require('@observability-platform/node-sdk');
@@ -131,29 +205,34 @@ const client = new ObservabilityClient({
 
 // Send logs
 client.info('Application started', { version: '1.0.0' });
-client.error('Failed to connect to database', { error: 'Connection timeout' });
+client.error('Database connection failed', {
+  error: 'Connection timeout',
+  retries: 3
+});
 
-// Track metrics
-client.counter('http.requests', 1, { endpoint: '/api/users', method: 'GET' });
-client.gauge('memory.usage', 75.5, { server: 'web-01' });
+// Send metrics
+client.counter('api.requests', 1, {
+  endpoint: '/users',
+  method: 'GET',
+  status: '200'
+});
 
-// Record events
+client.gauge('memory.usage.mb', 256.5, {
+  server: 'web-01'
+});
+
+// Send events
 client.event('user.signup', {
-  userId: '12345',
-  email: 'user@example.com',
+  userId: 'user_12345',
+  email: 'newuser@example.com',
   plan: 'premium'
 });
 
-// Flush when shutting down
-process.on('SIGTERM', async () => {
-  await client.close();
-  process.exit(0);
-});
+// Graceful shutdown
+await client.close();
 ```
 
-### Send Data via HTTP
-
-You can also send data directly to the API:
+**Via cURL:**
 
 ```bash
 # Send logs
@@ -164,8 +243,11 @@ curl -X POST http://localhost:3001/ingest/logs \
     "logs": [
       {
         "level": "info",
-        "message": "User logged in",
-        "context": { "userId": "123" }
+        "message": "User logged in successfully",
+        "context": {
+          "userId": "123",
+          "ip": "192.168.1.1"
+        }
       }
     ]
   }'
@@ -177,118 +259,38 @@ curl -X POST http://localhost:3001/ingest/metrics \
   -d '{
     "metrics": [
       {
-        "name": "api.latency",
+        "name": "api.response_time",
         "type": "gauge",
-        "value": 45.2,
-        "labels": { "endpoint": "/api/users" }
-      }
-    ]
-  }'
-
-# Send events
-curl -X POST http://localhost:3001/ingest/events \
-  -H "Content-Type: application/json" \
-  -H "X-API-Key: obs_your_api_key_here" \
-  -d '{
-    "events": [
-      {
-        "name": "order.completed",
-        "payload": { "orderId": "ORD-123", "amount": 99.99 }
+        "value": 145.2,
+        "labels": {"endpoint": "/api/users"}
       }
     ]
   }'
 ```
 
-## API Endpoints
+#### 3. View Data in Dashboard
 
-### Ingestion Endpoints
+1. Open http://localhost:3000/projects
+2. Click on your project
+3. Navigate through:
+   - **Logs**: Search, filter by level, see full-text results
+   - **Metrics**: View time-series charts with min/avg/max
+   - **Events**: Browse custom events with payloads
 
-- `POST /ingest/logs` - Ingest log events (requires API key)
-- `POST /ingest/metrics` - Ingest metrics (requires API key)
-- `POST /ingest/events` - Ingest custom events (requires API key)
+### Demo Credentials
 
-### Query Endpoints
+After running `npm run db:seed`:
 
-- `GET /query/logs` - Query logs with filters
-- `GET /query/metrics` - Query raw metric data
-- `GET /query/metrics/aggregate` - Get aggregated metrics
-- `GET /query/events` - Query custom events
-
-### Management Endpoints
-
-- `GET /projects` - List all projects
-- `POST /projects` - Create a new project
-- `GET /projects/:id` - Get project details
-- `DELETE /projects/:id` - Delete a project
-- `GET /health` - Health check
-
-## Database Schema
-
-The platform uses PostgreSQL with the following tables:
-
-- **projects**: Project definitions with API keys
-- **log_events**: Log entries with full-text search support
-- **metric_points**: Time-series metric data
-- **custom_events**: Custom application events
-
-See `api/src/db/schema.sql` for the complete schema.
-
-## Configuration
-
-### API Server (.env)
-
-```bash
-PORT=3001
-DATABASE_URL=postgresql://postgres:postgres@localhost:5432/observability
-NODE_ENV=development
-CORS_ORIGIN=*
+```
+Demo Application API Key: (shown in seed output)
+E-commerce Platform API Key: (shown in seed output)
 ```
 
-### Dashboard (.env.local)
+Access dashboard: http://localhost:3000/projects
 
-```bash
-NEXT_PUBLIC_API_URL=http://localhost:3001
-```
+## Integration Examples
 
-## Production Deployment
-
-### Build for Production
-
-```bash
-# Build all packages
-npm run build
-
-# Start production servers
-cd api && npm start
-cd dashboard && npm start
-```
-
-### Environment Considerations
-
-1. **Database**: Use a managed PostgreSQL service or set up proper backups
-2. **Security**:
-   - Keep API keys secret
-   - Use HTTPS in production
-   - Set appropriate CORS_ORIGIN
-3. **Scaling**: Consider switching to ClickHouse for high-volume data
-4. **Monitoring**: Monitor the platform itself for performance
-
-## Using with Your Other Repositories
-
-This observability platform is designed to be used across all your projects:
-
-1. **Create a project** for each application/service
-2. **Install the SDK** in each repository:
-   ```bash
-   npm install @observability-platform/node-sdk
-   ```
-3. **Add observability** to your code:
-   - Log important events
-   - Track metrics (request counts, latencies, etc.)
-   - Record custom events (user actions, business events)
-4. **View everything** in one central dashboard
-
-### Example: Express.js Integration
+### Express.js Middleware
 
 ```javascript
 const express = require('express');
@@ -300,7 +302,7 @@ const obs = new ObservabilityClient({
   apiKey: process.env.OBS_API_KEY,
 });
 
-// Middleware to track requests
+// Request tracking middleware
 app.use((req, res, next) => {
   const start = Date.now();
 
@@ -314,45 +316,144 @@ app.use((req, res, next) => {
     });
 
     obs.gauge('http.response_time', duration, {
-      method: req.method,
-      path: req.path
+      endpoint: req.path
     });
   });
 
   next();
 });
 
-// Log application events
-app.post('/users', async (req, res) => {
+// Business logic
+app.post('/orders', async (req, res) => {
   try {
-    const user = await createUser(req.body);
-    obs.info('User created', { userId: user.id });
-    obs.event('user.created', { userId: user.id, email: user.email });
-    res.json(user);
+    const order = await createOrder(req.body);
+
+    obs.info('Order created', { orderId: order.id });
+    obs.event('order.created', {
+      orderId: order.id,
+      amount: order.total,
+      items: order.items.length
+    });
+
+    res.json(order);
   } catch (error) {
-    obs.error('Failed to create user', { error: error.message });
-    res.status(500).json({ error: 'Internal server error' });
+    obs.error('Order creation failed', {
+      error: error.message,
+      userId: req.user.id
+    });
+    res.status(500).json({ error: 'Failed to create order' });
   }
 });
-
-// Graceful shutdown
-process.on('SIGTERM', async () => {
-  await obs.close();
-  process.exit(0);
-});
-
-app.listen(3000);
 ```
 
-## Future Enhancements
+### Health Monitoring
 
-- [ ] ClickHouse adapter for high-volume scenarios
-- [ ] Redis Streams / Kafka integration for event streaming
-- [ ] Alerting and notifications
-- [ ] More SDK languages (Python, Go, etc.)
-- [ ] Advanced visualization options
-- [ ] Log aggregation and patterns
-- [ ] Distributed tracing support
+```javascript
+const obs = new ObservabilityClient({ /* ... */ });
+
+setInterval(() => {
+  const usage = process.memoryUsage();
+
+  obs.gauge('memory.heap_used', usage.heapUsed / 1024 / 1024);
+  obs.gauge('memory.heap_total', usage.heapTotal / 1024 / 1024);
+  obs.gauge('memory.rss', usage.rss / 1024 / 1024);
+}, 30000); // Every 30 seconds
+```
+
+## API Reference
+
+### Ingestion Endpoints (Require API Key via `X-API-Key` header)
+
+- `POST /ingest/logs` - Batch log ingestion
+- `POST /ingest/metrics` - Batch metric ingestion
+- `POST /ingest/events` - Batch event ingestion
+
+### Query Endpoints
+
+- `GET /query/logs?projectId=X&level=error&search=...` - Query logs
+- `GET /query/metrics/aggregate?projectId=X&name=...` - Aggregated metrics
+- `GET /query/events?projectId=X&name=...` - Query events
+
+### Management Endpoints
+
+- `POST /projects` - Create project
+- `GET /projects` - List projects
+- `GET /projects/:id` - Get project details
+- `DELETE /projects/:id` - Delete project
+
+### Health Check
+
+- `GET /health` - API and database status
+
+## Testing
+
+```bash
+# Run all tests
+npm test
+
+# Run API tests only
+npm run test:api
+```
+
+Tests cover:
+- Validation schemas (Zod)
+- Error handling classes
+- Domain logic (log levels, metric aggregation)
+
+## Project Structure
+
+```
+event-stream-observability-platform/
+├── api/                           # Fastify API server
+│   ├── src/
+│   │   ├── db/                   # Database client, migrations, seed
+│   │   ├── models/               # Data access layer
+│   │   ├── routes/               # API endpoints
+│   │   ├── middleware/           # Auth, validation
+│   │   ├── validation/           # Zod schemas
+│   │   ├── utils/                # Error handling, helpers
+│   │   ├── __tests__/            # Vitest tests
+│   │   └── index.ts              # Server entry
+│   ├── Dockerfile
+│   └── package.json
+├── dashboard/                     # Next.js dashboard
+│   ├── src/
+│   │   ├── app/                  # App router pages
+│   │   │   ├── projects/         # Project management
+│   │   │   └── projects/[id]/    # Logs, metrics, events
+│   │   └── lib/                  # API client
+│   ├── Dockerfile
+│   └── package.json
+├── sdks/node/                     # Node.js SDK
+│   ├── src/index.ts              # Client implementation
+│   └── package.json
+├── docker-compose.yml             # Full stack
+├── docker-compose.dev.yml         # Database only
+└── package.json                   # Workspace root
+```
+
+## Future Extensions
+
+### Planned Features
+
+- **Alerting**: Threshold-based alerts with webhooks/email
+- **ClickHouse Adapter**: High-volume time-series storage
+- **Streaming**: Redis Streams / Kafka integration for real-time processing
+- **Additional SDKs**: Python, Go, Ruby clients
+- **Distributed Tracing**: OpenTelemetry integration
+- **Log Aggregation**: Pattern detection and log parsing
+- **Dashboard Enhancements**: Custom dashboards, saved queries
+- **User Authentication**: Multi-user support with RBAC
+- **Data Retention**: Automatic archival and cleanup policies
+- **Export**: Data export to S3, GCS, or other storage
+
+### Extensibility Points
+
+The platform is designed with swappable components:
+- **Storage**: PostgreSQL → ClickHouse adapter pattern
+- **Message Queue**: Abstract interface for Redis/Kafka
+- **Authentication**: Pluggable auth providers
+- **Visualization**: Dashboard component library
 
 ## License
 
@@ -360,4 +461,19 @@ MIT
 
 ## Contributing
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+Contributions welcome! This is a building block designed to be extended and integrated across multiple projects.
+
+### Development Workflow
+
+1. Fork and clone the repository
+2. Install dependencies: `npm install`
+3. Start database: `npm run docker:dev`
+4. Run migrations: `npm run db:migrate`
+5. Seed data: `npm run db:seed`
+6. Start dev servers: `npm run dev`
+7. Run tests: `npm test`
+8. Submit a pull request
+
+---
+
+**Built for developers who value simplicity, type safety, and easy integration.**
